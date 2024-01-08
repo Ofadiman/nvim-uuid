@@ -1,14 +1,32 @@
 local M = {}
 
+local function is_command_available(name)
+  local command = nil
+
+  if vim.fn.has("win32") == 1 then
+    command = "where"
+  else
+    command = "which"
+  end
+
+  return os.execute(command .. " " .. name) == 0
+end
+
 function M.uuid()
   local command = "uuidgen"
+
+  if is_command_available(command) == false then
+    print("Error: command \"" .. command .. "\" not available.")
+    return
+  end
+
   local uuidgenOutput = ""
   local handle = io.popen(command, "r")
   if handle then
     uuidgenOutput = handle:read("*a")
     handle:close()
   else
-    print("command \"" .. command .. "\" not available.")
+    print("Error: something went wrong while opening file handle for " .. command .. " command.")
     return
   end
 
