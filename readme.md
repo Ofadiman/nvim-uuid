@@ -18,6 +18,14 @@ require("lazy").setup({
 }
 ```
 
+## Usage
+
+Plugin exposes `uuid` function that allows to generate unique identifiers. Simply create a key mapping that calls the `uuid` function:
+
+```lua
+vim.api.nvim_set_keymap("n", "<leader>ut", "<cmd>lua require('nvim-uuid').uuid()<CR>", { noremap = true, silent = true })
+```
+
 ## Configuration
 
 If you want to override the default settings of the plugin, use the instructions below:
