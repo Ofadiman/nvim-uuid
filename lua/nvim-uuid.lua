@@ -1,4 +1,8 @@
-local M = {}
+local M = {
+  options = {
+    should_move_cursor_after_generating_uuid = true,
+  },
+}
 
 local function is_command_available(name)
   local command = nil
@@ -9,7 +13,7 @@ local function is_command_available(name)
     command = "which"
   end
 
-  return os.execute(command .. " " .. name) == 0
+  return os.execute(command .. " " .. name .. " > /dev/null 2>&1") == 0
 end
 
 function M.uuid()
@@ -32,16 +36,29 @@ function M.uuid()
 
   -- Trim whitespaces and new lines from generated uuid string
   local uuid = uuidgenOutput:gsub("^[%s\n]*(.-)[%s\n]*$", "%1")
-  local _, col = unpack(vim.api.nvim_win_get_cursor(0))
+
+  local win = vim.api.nvim_get_current_win()
+  local row, col = unpack(vim.api.nvim_win_get_cursor(win))
   local line = vim.api.nvim_get_current_line()
   local new_line = line:sub(1, col) .. uuid .. line:sub(col + 1)
   vim.api.nvim_set_current_line(new_line)
+
+  if M.options.should_move_cursor_after_generating_uuid == true then
+    vim.api.nvim_win_set_cursor(win, { row, col + string.len(uuid) })
+  end
 end
 
 -- The `setup` function is a convention in the neovim plugin environment that allows to configure a plugin.
 function M.setup(opts)
-  local options = opts or {}
-  print("configuring plugin with options:", options)
+  if opts.should_move_cursor_after_generating_uuid ~= nil then
+    if type(opts.should_move_cursor_after_generating_uuid) ~= "boolean" then
+      error("Invalid configuration: should_move_cursor_after_generating_uuid should be a boolean")
+    else
+      M.options.should_move_cursor_after_generating_uuid = opts.should_move_cursor_after_generating_uuid
+    end
+  end
+
+  print("configuring plugin with options:", P(M.options))
 end
 
 return M
