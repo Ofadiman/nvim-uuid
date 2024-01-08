@@ -1,6 +1,7 @@
 local M = {
   options = {
     should_move_cursor_after_generating_uuid = true,
+    case = "lower",
   },
 }
 
@@ -20,7 +21,7 @@ function M.uuid()
   local command = "uuidgen"
 
   if is_command_available(command) == false then
-    print("Error: command \"" .. command .. "\" not available.")
+    error("command \"" .. command .. "\" not available")
     return
   end
 
@@ -30,12 +31,19 @@ function M.uuid()
     uuidgenOutput = handle:read("*a")
     handle:close()
   else
-    print("Error: something went wrong while opening file handle for " .. command .. " command.")
+    error("Something went wrong while opening file handle for " .. command .. " command")
     return
   end
 
   -- Trim whitespaces and new lines from generated uuid string
   local uuid = uuidgenOutput:gsub("^[%s\n]*(.-)[%s\n]*$", "%1")
+  if M.options.case == "upper" then
+    uuid = string.upper(uuid)
+  elseif M.options.case == "lower" then
+    uuid = string.lower(uuid)
+  else
+    error("case " .. M.options.case .. " not supported")
+  end
 
   local win = vim.api.nvim_get_current_win()
   local row, col = unpack(vim.api.nvim_win_get_cursor(win))
@@ -48,17 +56,26 @@ function M.uuid()
   end
 end
 
--- The `setup` function is a convention in the neovim plugin environment that allows to configure a plugin.
 function M.setup(opts)
   if opts.should_move_cursor_after_generating_uuid ~= nil then
     if type(opts.should_move_cursor_after_generating_uuid) ~= "boolean" then
-      error("Invalid configuration: should_move_cursor_after_generating_uuid should be a boolean")
-    else
-      M.options.should_move_cursor_after_generating_uuid = opts.should_move_cursor_after_generating_uuid
+      error("should_move_cursor_after_generating_uuid should be a boolean")
     end
+
+    M.options.should_move_cursor_after_generating_uuid = opts.should_move_cursor_after_generating_uuid
   end
 
-  print("configuring plugin with options:", P(M.options))
+  if opts.case ~= nil then
+    if type(opts.case) ~= "string" then
+      error("case should be a string")
+    end
+
+    if not (opts.case == "lower" or opts.case == "upper") then
+      error("case must be set to \"upper\" or \"lower\"")
+    end
+
+    M.options.case = opts.case
+  end
 end
 
 return M
